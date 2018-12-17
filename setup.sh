@@ -5,7 +5,7 @@
 # https://possiblelossofprecision.net/?p=1956
 # http://kodi.wiki/view/HOW-TO:Autostart_Kodi_for_Linux#Add_a_new_systemd_script
 
-NAME=${NAME:-CHIP Bluetooth speaker}
+NAME=${NAME:-IoT Bluetooth speaker}
 DEFAULT_PIN=${DEFAULT_PIN:-0000}
 
 # Make sure only root can run our script
@@ -21,7 +21,7 @@ set -e
 
 # More early checks
 if ! grep -q CONFIG_NAMESPACES /boot/config-$(uname -r) ; then
-   echo "The kernel used doesn't seem to support namespaces, make sure the CHIP has been upgraded" 1>&2
+   echo "The kernel used doesn't seem to support namespaces, make sure this board has been upgraded" 1>&2
    exit 1
 fi
 
@@ -32,7 +32,7 @@ apt-get upgrade -y
 apt-get install -y bluez-tools pulseaudio-module-bluetooth pulseaudio libnss-myhostname crudini
 
 # See git log for details
-cp -f bt-agent.bin /usr/bin/bt-agent
+#cp -f bt-agent.bin /usr/bin/bt-agent
 
 # Setup default hostname (and Bluetooth adapter name)
 hostnamectl set-hostname "$NAME"
@@ -40,11 +40,11 @@ hostnamectl set-chassis embedded 2>&1 > /dev/null || :
 
 # Setup "no video" video mode
 # See https://bbs.nextthing.co/t/u-boot-2016-01-00088-g99c771f/11642/2
-DELETE_FW_ENV=0
-if [ ! -f /etc/fw_env.config ] ; then
-   echo "/dev/mtdblock3 0 0x400000 0x4000" > /etc/fw_env.config
-   DELETE_FW_ENV=1
-fi
+#DELETE_FW_ENV=0
+#if [ ! -f /etc/fw_env.config ] ; then
+#   echo "/dev/mtdblock3 0 0x400000 0x4000" > /etc/fw_env.config
+#   DELETE_FW_ENV=1
+#fi
 # Disable video in U-Boot
 # FIXME the logo still appears
 # fw_setenv video-mode sunxi:720x576-24@60,monitor=none
@@ -54,14 +54,14 @@ if ! echo $BOOTARGS | grep -q video=none ; then
    fw_setenv bootargs "$BOOTARGS video=none"
 fi
 # Delete config file if we created it
-if [ $DELETE_FW_ENV == "1" ] ; then
-   rm -f /etc/fw_env.config
-fi
+#if [ $DELETE_FW_ENV == "1" ] ; then
+#   rm -f /etc/fw_env.config
+#fi
 
 # Disable the blinking light
-if [ -f /sys/class/leds/chip\:white\:status/trigger ] ; then
-   echo "@reboot root echo none | tee /sys/class/leds/chip\:white\:status/trigger > /dev/null" >> /etc/cron.d/disable-heartbeat-led
-fi
+#if [ -f /sys/class/leds/chip\:white\:status/trigger ] ; then
+#   echo "@reboot root echo none | tee /sys/class/leds/chip\:white\:status/trigger > /dev/null" >> /etc/cron.d/disable-heartbeat-led
+#fi
 
 # Setup bluez
 cat <<EOF > /etc/bluetooth/audio.conf
@@ -70,12 +70,12 @@ Disable=Socket
 Enable=Media,Source,Sink,Gateway
 EOF
 
-mkdir -p /home/chip/.config/
-cat <<EOF > /home/chip/.config/bluetooth-default-pin
+mkdir -p /home/tachikoma/.config/
+cat <<EOF > /home/tachikoma/.config/bluetooth-default-pin
 * $DEFAULT_PIN
 EOF
-chown -R chip:chip /home/chip/.config/
-chmod 0600 /home/chip/.config/bluetooth-default-pin
+chown -R tachikoma:tachikoma /home/tachikoma/.config/
+chmod 0600 /home/tachikoma/.config/bluetooth-default-pin
 
 cat <<EOF > /etc/systemd/system/bt-agent.service
 [Unit]
@@ -86,8 +86,8 @@ After=bt_rtk_hciattach@ttyS1.service
 WantedBy=multi-user.target
 
 [Service]
-User=chip
-Group=chip
+User=tachikoma
+Group=tachikoma
 Type=simple
 PrivateTmp=true
 ExecStartPre=/usr/bin/bt-adapter --set Powered 1
@@ -95,7 +95,7 @@ ExecStartPre=/usr/bin/bt-adapter --set DiscoverableTimeout 0
 ExecStartPre=/usr/bin/bt-adapter --set Discoverable 1
 ExecStartPre=/usr/bin/bt-adapter --set PairableTimeout 0
 ExecStartPre=/usr/bin/bt-adapter --set Pairable 1
-ExecStart=/usr/bin/bt-agent -c NoInputNoOutput -p /home/chip/.config/bluetooth-default-pin
+ExecStart=/usr/bin/bt-agent -c NoInputNoOutput -p /home/tachikoma/.config/bluetooth-default-pin
 Restart=on-failure
 EOF
 
@@ -119,8 +119,8 @@ Description=PulseAudio Daemon
 WantedBy=multi-user.target
 
 [Service]
-User=chip
-Group=chip
+User=tachikoma
+Group=tachikoma
 Type=simple
 PrivateTmp=true
 ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit
