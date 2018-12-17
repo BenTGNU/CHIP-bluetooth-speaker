@@ -111,6 +111,9 @@ systemctl enable bt-agent.service
 systemctl restart bt-agent.service
 
 # Setup pulseaudio
+
+
+
 cat <<EOF > /etc/systemd/system/pulseaudio.service
 [Unit]
 Description=PulseAudio Daemon
@@ -123,7 +126,7 @@ User=tachikoma
 Group=tachikoma
 Type=simple
 PrivateTmp=true
-ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit
+ExecStart=/usr/bin/pulseaudio --realtime --disallow-exit --no-cpu-limit --disable-shm --exit-idle-time=-1
 Restart=on-abort
 RestartSec=5
 EOF
